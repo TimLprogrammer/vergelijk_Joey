@@ -157,27 +157,25 @@ def export_changes_to_excel(diff_data, key_column, filename="veranderde_records.
 
     if changes_data:
         df = pd.DataFrame(changes_data)
-        output = BytesIO()
+        buffer = BytesIO()
         
-        with pd.ExcelWriter(output, engine='xlsxwriter', engine_kwargs={'options': {'nan_inf_to_errors': True}}) as writer:
+        with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
             df.to_excel(writer, sheet_name='Veranderde Records', index=False)
             workbook = writer.book
             worksheet = writer.sheets['Veranderde Records']
             
-            # Stel standaard celformaat in (zwarte tekst)
+            # Stel standaard celformaat in
             standard_format = workbook.add_format({'text_wrap': True})
             
             # Pas automatische kolombreedte toe
             for idx, col in enumerate(df.columns):
-                # Bereken maximale breedte voor deze kolom
                 max_length = max(
-                    len(str(col)),  # Header lengte
-                    df[col].astype(str).apply(len).max()  # Maximum data lengte
+                    len(str(col)),
+                    df[col].astype(str).apply(len).max()
                 )
-                # Voeg wat extra ruimte toe en stel de kolombreedte in
                 worksheet.set_column(idx, idx, max_length + 2, standard_format)
             
-            # Voeg headeropmaak toe
+            # Header opmaak
             header_format = workbook.add_format({
                 'bold': True,
                 'text_wrap': True,
@@ -186,18 +184,18 @@ def export_changes_to_excel(diff_data, key_column, filename="veranderde_records.
                 'border': 1
             })
             
-            # Pas headeropmaak toe
             for col_num, value in enumerate(df.columns.values):
                 worksheet.write(0, col_num, value, header_format)
-        
-        output.seek(0)
-        return output
+
+        # Belangrijk: zorg dat alle data geschreven is voordat we de buffer teruggeven
+        buffer.seek(0)
+        return buffer
     else:
-        output = BytesIO()
-        with pd.ExcelWriter(output, engine='xlsxwriter', engine_kwargs={'options': {'nan_inf_to_errors': True}}) as writer:
+        buffer = BytesIO()
+        with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
             pd.DataFrame().to_excel(writer, sheet_name='Geen Veranderingen')
-        output.seek(0)
-        return output
+        buffer.seek(0)
+        return buffer
 
 def get_download_link_for_bytes(bytes_data, filename, text):
     """Creëer een downloadlink voor een BytesIO object"""
@@ -225,7 +223,7 @@ def handle_duplicates(df, key_column):
 
 # Hoofdfunctie voor de app
 def main():
-    st.title("📊 Excel Bestandsvergelijker")
+    st.title("📊 Excel Bestandsvergelijker - Focus op Veranderingen")
     st.markdown("Upload twee Excel-bestanden om veranderingen tussen gekoppelde records te analyseren.")
     
     # Sidebar voor bestandsupload
@@ -518,13 +516,13 @@ def main():
                                     st.write("Download een Excel-bestand met alle veranderde records. Veranderingen worden in rood gemarkeerd.")
                                     
                                     # Genereer het Excel-bestand
-                                    excel_bytes = export_changes_to_excel(diff_results, key_column)
+                                    excel_buffer = export_changes_to_excel(diff_results, key_column)
                                     export_filename = f"veranderde_records_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
                                     
                                     # Download knop met rerun
                                     if st.download_button(
                                         label="Download Veranderde Records (Excel)",
-                                        data=excel_bytes,
+                                        data=excel_buffer,
                                         file_name=export_filename,
                                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                                     ):
