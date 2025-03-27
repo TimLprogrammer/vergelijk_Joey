@@ -225,7 +225,7 @@ def handle_duplicates(df, key_column):
 
 # Hoofdfunctie voor de app
 def main():
-    st.title("📊 Excel Bestandsvergelijker - Focus op Veranderingen")
+    st.title("📊 Excel Bestandsvergelijker")
     st.markdown("Upload twee Excel-bestanden om veranderingen tussen gekoppelde records te analyseren.")
     
     # Sidebar voor bestandsupload
